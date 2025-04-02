@@ -11,7 +11,7 @@ the first line will install the `remotes` package if you don't already have it.
 if("remotes" %in% rownames(installed.packages()) == FALSE) {install.packages("remotes")}
 
 # Install pronghornLT from GitHub
-remotes::install_github("jcarlis3/pronghornLT@master")
+remotes::install_github("WyoGFD/pronghornLT")
 
 # Load pronghornLT for use
 require(pronghornLT)
