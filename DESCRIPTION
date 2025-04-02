@@ -17,8 +17,8 @@ Maintainer: Jason D. Carlisle <jason.carlisle@wyo.gov>
 Description: Utilities to assist with aerial line-transect surveys for pronghorn
     in Wyoming.  Functions aid with study design, conversion of raw data to
     an analysis-ready format, and analysis.
-URL: https://github.com/jcarlis3/pronghornLT
-BugReports: https://github.com/jcarlis3/pronghornLT/issues
+URL: https://github.com/WyoGFD/pronghornLT
+BugReports: https://github.com/WyoGFD/pronghornLT/issues
 Depends: R (>= 3.6.0)
 Imports: 
     data.table,
