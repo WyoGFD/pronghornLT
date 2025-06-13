@@ -20,12 +20,12 @@ require(pronghornLT)
 ## How to use
 See the documentation and examples for the following functions:
 
-### Survey design - Create transect lines within a herd unit
-- `calcLineLength`
-- `makeLines`
+### Survey design
+- `calcLineLength`: determine how much transect line length needs to be surveyed to reach a target sample size of pronghorn groups detected
+- `makeLines`:  create a spatial object of transect lines of a specified orientation and total length
 
-### Data prep and QAQC - Prep raw survey data for analysis and print QAQC summaries
-- `prepDataForAnalysis`
+### Data prep and QAQC
+- `prepDataForAnalysis`: format and prepare raw survey data for analysis and print QAQC summaries
 
-### Analysis - Fit distance-sampling model to estimate abundance
-- `fitDistSampModel`
+### Analysis
+- `fitDistSampModel`: fit distance-sampling model to estimate abundance
