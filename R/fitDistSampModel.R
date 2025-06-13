@@ -13,8 +13,8 @@
 #' Default is 200 m, given the pronghorn survey strip is 200 m wide.
 #' @param sidesSurveyed Sides of the aircraft surveyed.  Default is 1, given the
 #' current protocol specifies 1 observer looking out 1 side of the aircraft.
-#' Rdistance assumes 2 sides of the line are surveyed, so this allows the survey
-#' strip area to be adjusted accordingly.
+#' Rdistance assumes 2 sides of the line are surveyed, by default, so this
+#' allows the area of the survey strip to be adjusted accordingly.
 #' @param areaMi2 Size of the area (in square miles) that the abundance estimate
 #' is extrapolated to.  This is often the total area of the herd unit, but areas
 #' not occupiable by pronghorn (e.g., forested areas) should be excluded.
@@ -28,7 +28,8 @@
 #' @author Jason Carlisle
 #'
 #' @importFrom units set_units
-#' @importFrom Rdistance dfuncEstim abundEstim
+#' @importFrom Rdistance RdistDf dfuncEstim abundEstim
+#' @importFrom dplyr mutate select
 #' @export
 #'
 #' @examples
@@ -64,33 +65,50 @@ fitDistSampModel <- function(ddf,
   set.seed(82070)
 
 
-  # Adjust transect lengths to adjust total surveyed area.
-  # Only one side of transect typically surveyed, but Rdistance expects both
-  # sides are.
-  sampFrac <- sidesSurveyed / 2
-  sdf$length <- sampFrac * sdf$lengthKm
-  sdf$lengthKm <- NULL
 
 
-  # Set units (required by Rdistance beginning with version 2.2.0)
+
+
+
+  # Set units (required by Rdistance as of v2.2)
   # And Rdistance works best if the distance column is named "dist"
   wHi <- units::set_units(wHi, "m")
-  ddf$dist <- units::set_units(ddf$adjustedDist, "m")
-  ddf$adjustedDist <- NULL
-  sdf$length <- units::set_units(sdf$length, "km")
   areaMi2 <- units::set_units(areaMi2, "mi2")
+
+  ddf <- ddf |>
+    mutate(dist = units::set_units(adjustedDist, "m")) |>
+    select(-adjustedDist)
+
+  sdf <- sdf |>
+    mutate(length = units::set_units(lengthKm, "km")) |>
+    select(-lengthKm)
+
+
+  # Make nested data.frame (required by Rdistance as of v4.0)
+  df <- Rdistance::RdistDf(transectDf = sdf,
+                           detectionDf = ddf,
+                           by = "siteID",
+                           pointSurvey = FALSE,
+                           observer = "single",
+                           .detectionCol = "detections",
+                           .effortCol = "length")
+
+  # Summary
+  # summary(df, formula = dist ~ groupsize(s))
 
 
 
   # Fit detection function
   # Specifying outputUnits = "m" will provide distance measures in m
   # and density estimate in mi^2 (we'll convert those to mi^2 in the app)
-  dfunc <- Rdistance::dfuncEstim(formula = dist ~ 1 + groupsize(s),
-                                 detectionData = ddf,
-                                 likelihood = keyFun,
-                                 expansions = 0,
-                                 w.hi = wHi,
-                                 outputUnits = "m")
+  dfunc <- df |>
+    Rdistance::dfuncEstim(dist ~ 1 + groupsize(s),
+                          likelihood = keyFun,
+                          expansions = 0,
+                          w.hi = wHi,
+                          outputUnits = "m")
+
+  # plot(dfunc)
 
 
   # Estimate abundance
@@ -101,14 +119,16 @@ fitDistSampModel <- function(ddf,
     ci <- 0.95  # default 95% CI
   }
 
-  fit <- Rdistance::abundEstim(dfunc,
-                               detectionData = ddf,
-                               siteData = sdf,
-                               area = areaMi2,
-                               ci = ci,
-                               R = bootIterations,
-                               plot.bs = FALSE,
-                               showProgress = FALSE)
+  fit <- dfunc |>
+    Rdistance::abundEstim(area = areaMi2,
+                          propUnitSurveyed = sidesSurveyed / 2,
+                          ci = ci,
+                          R = bootIterations,
+                          plot.bs = FALSE,
+                          showProgress = FALSE)
+
+  summary(fit)
+  data.frame(fit$estimates)
 
   return(fit)
 

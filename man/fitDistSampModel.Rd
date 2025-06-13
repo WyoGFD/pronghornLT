@@ -27,8 +27,8 @@ Default is 200 m, given the pronghorn survey strip is 200 m wide.}
 
 \item{sidesSurveyed}{Sides of the aircraft surveyed.  Default is 1, given the
 current protocol specifies 1 observer looking out 1 side of the aircraft.
-Rdistance assumes 2 sides of the line are surveyed, so this allows the survey
-strip area to be adjusted accordingly.}
+Rdistance assumes 2 sides of the line are surveyed, by default, so this
+allows the area of the survey strip to be adjusted accordingly.}
 
 \item{areaMi2}{Size of the area (in square miles) that the abundance estimate
 is extrapolated to.  This is often the total area of the herd unit, but areas

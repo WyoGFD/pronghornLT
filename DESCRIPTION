@@ -1,8 +1,8 @@
 Package: pronghornLT
 Type: Package
 Title: Utilities for Pronghorn Line-transect Surveys in Wyoming
-Version: 1.4.8
-Date: 2024-03-29
+Version: 1.5.0
+Date: 2025-06-13
 Authors@R: c(
     person("Jason", "Carlisle",
            email="jason.carlisle@wyo.gov",
@@ -19,14 +19,14 @@ Description: Utilities to assist with aerial line-transect surveys for pronghorn
     an analysis-ready format, and analysis.
 URL: https://github.com/WyoGFD/pronghornLT
 BugReports: https://github.com/WyoGFD/pronghornLT/issues
-Depends: R (>= 3.6.0)
+Depends: R (>= 4.1.0)
 Imports: 
     data.table,
     dplyr,
     htmltools,
     leaflet,
     lubridate,
-    Rdistance (>= 2.2.1),
+    Rdistance (>= 4.0.5),
     readxl,
     rlang,
     sf,
@@ -38,4 +38,4 @@ License: GPL-3
 Encoding: UTF-8
 LazyData: TRUE
 LazyDataCompression: bzip2
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.2
