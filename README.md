@@ -1,4 +1,5 @@
-# pronghornLT
+<img src="PronghornLT_Logo.jpg" alt="Pronghorn LT Logo" width="600"/>
+
 *Utilities for Pronghorn Line-transect Surveys in Wyoming*
 
 ## How to install
