@@ -13,7 +13,7 @@ mapResults(preppedData)
 Returns a leaflet map.
 }
 \description{
-Maps the results of a survey.
+Maps the results of a survey, including surveyed lines, pronghorn observation points, and the herd unit boundary.
 }
 \examples{
 \dontrun{
@@ -27,5 +27,5 @@ mapResults(dat)
 
 }
 \author{
-Garrett Catlin
+Garrett Catlin, Jason Carlisle
 }

@@ -1,7 +1,7 @@
 #' mapResults
 #'
 #' @description
-#' Maps the results of a survey.
+#' Maps the results of a survey, including surveyed lines, pronghorn observation points, and the herd unit boundary.
 #'
 #' @param preppedData List object returned from \code{\link{prepDataForAnalysis}}.
 #'
@@ -17,12 +17,12 @@
 #' mapResults(dat)
 #' }
 #'
-#' @author Garrett Catlin
+#' @author Garrett Catlin, Jason Carlisle
 #'
 #' @import leaflet
 #' @importFrom htmltools HTML
 #' @importFrom lubridate as_date
-#' @importFrom sf st_transform st_as_sf
+#' @importFrom sf st_transform st_as_sf st_centroid st_combine st_filter
 #' @importFrom viridisLite magma
 #' @importFrom data.table fcase
 #'
@@ -79,19 +79,35 @@ mapResults <- function(preppedData) {
     p$s >= 21, 9
   )
 
+  # herd units for reference
+  # from package's /data folder
+  hu <- sf::st_transform(herdUnits, crs = 4326)
+
+  # Keep the herd unit that contains the points' centroid
+  p_centroid <- p %>%
+    sf::st_combine() %>%
+    sf::st_centroid()
+
+  hu <- hu %>%
+    sf::st_filter(p_centroid)
+
+
   # leaflet
-  map = leaflet::leaflet() %>%
+  map <- leaflet::leaflet() %>%
     leaflet::addTiles() %>%
+    leaflet::addPolygons(data = hu,
+                         color = "darkslategray",
+                         fillOpacity = 0) %>%
     leaflet::addPolylines(data = l,
-                 weight = 4,
-                 label = ~popup_text,
-                 color = ~color,
-                 opacity = .75) %>%
+                          weight = 4,
+                          label = ~popup_text,
+                          color = ~color,
+                          opacity = .75) %>%
     leaflet::addCircleMarkers(data = p,
-                     radius = ~radius,
-                     label = ~popup_text,
-                     stroke = F,
-                     fillOpacity = .45)
+                              radius = ~radius,
+                              label = ~popup_text,
+                              stroke = F,
+                              fillOpacity = .45)
 
   # return
   return(map)
