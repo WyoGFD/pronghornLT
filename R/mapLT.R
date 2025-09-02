@@ -45,18 +45,12 @@
 #' }
 #'
 #' @author Garrett Catlin
-#'
-#' @import leaflet
-#' @importFrom htmltools HTML
-#' @importFrom sf st_transform st_as_sf
-#' @rawNamespace import(data.table, except = shift)
-#'
 #' @export
 
 mapLT <- function(herdPoly, cutoutPoly = NULL, lines = NULL) {
 
   # transform poly
-  herdPoly <- sf::st_transform(herdPoly, '+proj=longlat +datum=WGS84')
+  herdPoly <- st_transform(herdPoly, '+proj=longlat +datum=WGS84')
 
   # map
   map <- leaflet() %>%
@@ -72,7 +66,7 @@ mapLT <- function(herdPoly, cutoutPoly = NULL, lines = NULL) {
   if(!is.null(cutoutPoly)) {
 
     # transform poly
-    cutoutPoly <- sf::st_transform(cutoutPoly, '+proj=longlat +datum=WGS84')
+    cutoutPoly <- st_transform(cutoutPoly, '+proj=longlat +datum=WGS84')
 
     # add cutouts
     map <- map %>%
@@ -87,16 +81,16 @@ mapLT <- function(herdPoly, cutoutPoly = NULL, lines = NULL) {
   # add lines if applicable
   if (!is.null(lines)) {
     # transform
-    lines <- sf::st_transform(lines, '+proj=longlat +datum=WGS84')
+    lines <- st_transform(lines, '+proj=longlat +datum=WGS84')
 
     # add label
-    lines <- data.table::as.data.table(lines)
-    lines[, leaflet_label := htmltools::HTML(paste0(
+    lines <- as.data.table(lines)
+    lines[, leaflet_label := HTML(paste0(
       "<b>", LineID, "</b> <br/>",
       "<b> Length (km): </b>", round(lengthKm, 2), "<br/>",
       "<b> Length (mi): </b>", round(lengthMi,2)
     )), by = LineID]
-    lines <- sf::st_as_sf(lines)
+    lines <- st_as_sf(lines)
 
     # add lines
     map <- map %>%

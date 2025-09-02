@@ -78,7 +78,7 @@ transect length.
 }
 \examples{
 \dontrun{
-#Read in herd unit polygon
+# Read in herd unit polygon
 hu <- sf::st_read("W:/My Drive/Projects/Pronghorn_ltds/herd_units/Rattlesnake_HU.shp")
 
 # Make lines

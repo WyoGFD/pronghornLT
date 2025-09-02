@@ -47,25 +47,21 @@
 #' mapLT(poly, x, lines$lines)
 #' }
 #'
-#' @importFrom sf st_crs st_transform st_combine st_difference st_agr
-#'
 #' @author Garrett Catlin
-#'
 #' @return A polygon with cutouts
-#'
 #' @export
 
 cutPoly <- function(sPoly, xPoly) {
 
   # transform to same crs
-  xPoly <- sf::st_transform(xPoly, sf::st_crs(sPoly))
+  xPoly <- st_transform(xPoly, st_crs(sPoly))
 
   # combine xPoly
-  xPoly <- sf::st_combine(xPoly)
+  xPoly <- st_combine(xPoly)
 
   # take difference
-  sf::st_agr(sPoly) = "constant"
-  diffPoly <- sf::st_difference(sPoly, xPoly)
+  st_agr(sPoly) = "constant"
+  diffPoly <- st_difference(sPoly, xPoly)
 
   # return
   return(diffPoly)

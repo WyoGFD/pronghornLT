@@ -51,7 +51,7 @@ the target number of pronghorn groups.
 \examples{
 \dontrun{
 # Read in a sf polygon (here for Rattlesnake herd unit less unoccupied area)
-occupiedPolygon <- sf::st_read("U:/My Drive/PronghornLT/Rattlesnake/GIS",
+occupiedPolygon <- st_read("U:/My Drive/PronghornLT/Rattlesnake/GIS",
                                "Rattlesnake_HU")
 
 calcLineLength(occupiedPolygon = occupiedPolygon,

@@ -91,14 +91,6 @@
 #' @references Guenzel, R.J. 2007. Procedures for Estimating Pronghorn Abundance
 #' in Wyoming Using Aerial Line Transect Sampling. Wyoming Game and Fish Department.
 #' Cheyenne, WY, USA.
-
-#' @importFrom dplyr select group_by summarize %>%
-#' @importFrom readxl excel_sheets read_excel
-#' @importFrom rlang .data
-#' @importFrom sf st_as_sf st_cast
-#' @importFrom stats dist na.omit
-#' @importFrom utils menu
-#' @importFrom lubridate ymd_hms ymd as_date
 #' @export
 #'
 #' @examples
@@ -147,9 +139,9 @@ prepDataForAnalysis <- function(inputFile = NULL,
 
   # Have the user select which sheet of the selected input Excel file to use
   if (is.null(inputSheet)) {
-    sheetNames <- readxl::excel_sheets(inputFile)
+    sheetNames <- excel_sheets(inputFile)
     sheetIndex <- menu(sheetNames,
-      title = "Which sheet in the Excel file contains the input data?"
+                       title = "Which sheet in the Excel file contains the input data?"
     )
     inputSheet <- sheetNames[sheetIndex]
   }
@@ -165,7 +157,7 @@ prepDataForAnalysis <- function(inputFile = NULL,
   # New names:
   # • `Cluster size` -> `Cluster size...13`
   # • `Cluster size` -> `Cluster size...16`
-  x <- readxl::read_excel(
+  x <- read_excel(
     path = inputFile,
     sheet = inputSheet,
     .name_repair = "unique_quiet"
@@ -214,10 +206,10 @@ prepDataForAnalysis <- function(inputFile = NULL,
   x$band <- gsub("; Cluster size", "", x$band)
 
   # time format date/time cols
-  x$Date <- lubridate::ymd(x$Date)
-  x$Time <- lubridate::ymd_hms(x$Time)
+  x$Date <- ymd(x$Date)
+  x$Time <- ymd_hms(x$Time)
   x$Time <- format(as.POSIXct(x$Time), format = "%H:%M:%S")
-  x$DateTime <- lubridate::ymd_hms(paste0(x$Date, " ", x$Time))
+  x$DateTime <- ymd_hms(paste0(x$Date, " ", x$Time))
 
 
   # Keep only needed columns
@@ -281,10 +273,10 @@ prepDataForAnalysis <- function(inputFile = NULL,
   for (i in 1:length(unique.sites)) {
     nrow.start <-
       nrow(sdf[sdf$siteID == unique.sites[i] &
-        sdf$event == "Start new transect", ])
+                 sdf$event == "Start new transect", ])
     nrow.end <-
       nrow(sdf[sdf$siteID == unique.sites[i] &
-        sdf$event == "End transect", ])
+                 sdf$event == "End transect", ])
     if (!(nrow.start == 1 & nrow.end == 1)) {
       fail.sites <- c(fail.sites, unique.sites[i])
     }
@@ -338,7 +330,7 @@ prepDataForAnalysis <- function(inputFile = NULL,
 
   # Spatial data - transects
   # Create end points
-  e <- sf::st_as_sf(
+  e <- st_as_sf(
     x = tdf,
     coords = c("x", "y"),
     crs = shpCRS
@@ -348,14 +340,14 @@ prepDataForAnalysis <- function(inputFile = NULL,
   # I think the summarize step is needed, so added a dummy variable s that
   # is then dropped
   l <- e %>%
-    dplyr::group_by(siteID) %>%
-    dplyr::summarize(s = unique(siteID), begin = min(DateTime), end = max(DateTime)) %>%
-    sf::st_cast("LINESTRING") %>%
-    dplyr::select(siteID, begin, end, geometry)
+    group_by(siteID) %>%
+    summarize(s = unique(siteID), begin = min(DateTime), end = max(DateTime)) %>%
+    st_cast("LINESTRING") %>%
+    select(siteID, begin, end, geometry)
 
   # add transect length
-  lLength <- sf::st_length(l)
-  lLength <- units::set_units(lLength, "km")
+  lLength <- st_length(l)
+  lLength <- set_units(lLength, "km")
   l$Length <- lLength
 
   # Check
@@ -364,27 +356,27 @@ prepDataForAnalysis <- function(inputFile = NULL,
 
   # get appx. transect spacing
   transectSpacing <- l |>
-    dplyr::group_by(siteID) |>
-    sf::st_line_sample(n = 100) |>
-    sf::st_as_sf() |>
-    sf::st_distance() |>
+    group_by(siteID) |>
+    st_line_sample(n = 100) |>
+    st_as_sf() |>
+    st_distance() |>
     as.data.frame.table(responseName = "Dist") |>
-    dplyr::filter(Var1 != Var2) |>
-    dplyr::group_by(Var1) |>
-    dplyr::slice_min(order_by = Dist) |>
-    dplyr::ungroup() |>
-    dplyr::filter(Dist == max(Dist)) |>
-    dplyr::slice_sample(n = 1) |>
+    filter(Var1 != Var2) |>
+    group_by(Var1) |>
+    slice_min(order_by = Dist) |>
+    ungroup() |>
+    filter(Dist == max(Dist)) |>
+    slice_sample(n = 1) |>
     getElement("Dist") |>
-    units::set_units("km") |>
-    units::drop_units()
+    set_units("km") |>
+    drop_units()
 
   # Spatial data - detections
   # Create points for pronghorn detections (where the plane was when detection
   # was recorded)
 
   # Create points
-  p <- sf::st_as_sf(
+  p <- st_as_sf(
     x = ddf,
     coords = c("x", "y"),
     crs = shpCRS
@@ -400,8 +392,8 @@ prepDataForAnalysis <- function(inputFile = NULL,
 
   # Summary of AGL values (NA vs not) by transect
   agl.site <- ddf %>%
-    dplyr::group_by(.data$siteID, .drop = FALSE) %>%
-    dplyr::summarize(
+    group_by(.data$siteID, .drop = FALSE) %>%
+    summarize(
       n = length(.data$agl),
       nNA = sum(is.na(.data$agl)),
       nGood = .data$n - .data$nNA
@@ -456,7 +448,7 @@ prepDataForAnalysis <- function(inputFile = NULL,
         # this site and those with usable agl values
         good.sites <-
           agl.site[(agl.site$nGood > 0 |
-            agl.site$siteID == unique.sites[i]), ]
+                      agl.site$siteID == unique.sites[i]), ]
         good.sites$id <-
           1:nrow(good.sites) # numeric way to index sites, clunky
         use.sites.id <-

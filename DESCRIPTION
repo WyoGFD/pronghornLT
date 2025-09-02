@@ -1,19 +1,18 @@
 Package: pronghornLT
 Type: Package
 Title: Utilities for Pronghorn Line-transect Surveys in Wyoming
-Version: 1.5.1
-Date: 2025-07-21
+Version: 1.5.2
+Date: 2025-08-29
 Authors@R: c(
     person("Jason", "Carlisle",
-           email="jason.carlisle@wyo.gov",
-           role=c("aut", "cre")),
-    person("Garrett", "Catlin", role="aut"),
-    person("Tom", "Prebyl", role="aut"),
-    person("Eric", "Newkirk", role="ctb"),
-    person("Trent", "McDonald", role="ctb"),
-    person("Lee", "Knox", role="ctb"),
-    person("Embere", "Hall", role="ctb"))
-Maintainer: Jason D. Carlisle <jason.carlisle@wyo.gov>
+           email = "jason.carlisle@wyo.gov",
+           role = c("aut", "cre")),
+    person("Garrett", "Catlin", role = "aut"),
+    person("Tom", "Prebyl", role = "aut"),
+    person("Eric", "Newkirk", role = "ctb"),
+    person("Trent", "McDonald", role = "ctb"),
+    person("Lee", "Knox", role = "ctb"),
+    person("Embere", "Hall", role = "ctb"))
 Description: Utilities to assist with aerial line-transect surveys for pronghorn
     in Wyoming.  Functions aid with study design, conversion of raw data to
     an analysis-ready format, and analysis.
@@ -30,9 +29,10 @@ Imports:
     readxl,
     rlang,
     sf,
-    spatstat,
     spatstat.geom,
+    stats,
     units,
+    utils,
     viridisLite
 License: GPL-3
 Encoding: UTF-8

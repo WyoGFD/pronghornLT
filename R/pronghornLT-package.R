@@ -1,0 +1,82 @@
+#' @keywords internal
+"_PACKAGE"
+
+.onAttach <- function(libname, pkgname){
+
+  # Extract version number
+  v <- packageVersion("pronghornLT")
+
+  # Startup message
+  packageStartupMessage(paste0("pronghornLT (version ",
+                               v ,
+                               ")"))
+
+}
+
+## usethis namespace: start
+#' @importFrom data.table :=
+#' @importFrom data.table as.data.table
+#' @importFrom data.table fcase
+#' @importFrom data.table setkey
+#' @importFrom dplyr %>%
+#' @importFrom dplyr arrange
+#' @importFrom dplyr filter
+#' @importFrom dplyr group_by
+#' @importFrom dplyr mutate
+#' @importFrom dplyr select
+#' @importFrom dplyr slice_min
+#' @importFrom dplyr slice_sample
+#' @importFrom dplyr summarize
+#' @importFrom dplyr ungroup
+#' @importFrom htmltools HTML
+#' @importFrom leaflet addCircleMarkers
+#' @importFrom leaflet addPolygons
+#' @importFrom leaflet addPolylines
+#' @importFrom leaflet addTiles
+#' @importFrom leaflet leaflet
+#' @importFrom lubridate as_date
+#' @importFrom lubridate ymd
+#' @importFrom lubridate ymd_hms
+#' @importFrom Rdistance abundEstim
+#' @importFrom Rdistance dfuncEstim
+#' @importFrom Rdistance RdistDf
+#' @importFrom readxl excel_sheets
+#' @importFrom readxl read_excel
+#' @importFrom rlang .data
+#' @importFrom sf st_agr
+#' @importFrom sf st_area
+#' @importFrom sf st_as_sf
+#' @importFrom sf st_bbox
+#' @importFrom sf st_buffer
+#' @importFrom sf st_cast
+#' @importFrom sf st_centroid
+#' @importFrom sf st_combine
+#' @importFrom sf st_coordinates
+#' @importFrom sf st_crs
+#' @importFrom sf st_difference
+#' @importFrom sf st_distance
+#' @importFrom sf st_filter
+#' @importFrom sf st_intersection
+#' @importFrom sf st_is_empty
+#' @importFrom sf st_length
+#' @importFrom sf st_line_sample
+#' @importFrom sf st_linestring
+#' @importFrom sf st_sf
+#' @importFrom sf st_sfc
+#' @importFrom sf st_transform
+#' @importFrom sf st_union
+#' @importFrom sf st_write
+#' @importFrom spatstat.geom as.owin
+#' @importFrom spatstat.geom owin
+#' @importFrom spatstat.geom psp
+#' @importFrom stats dist
+#' @importFrom stats end
+#' @importFrom stats na.omit
+#' @importFrom stats optimize
+#' @importFrom units drop_units
+#' @importFrom units set_units
+#' @importFrom utils menu
+#' @importFrom utils packageVersion
+#' @importFrom viridisLite magma
+## usethis namespace: end
+NULL

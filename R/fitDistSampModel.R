@@ -24,12 +24,7 @@
 #'
 #' @return An 'abundance estimate' object.  Same as returned by
 #' \code{Rdistance::abundEstim}.
-#'
 #' @author Jason Carlisle
-#'
-#' @importFrom units set_units
-#' @importFrom Rdistance RdistDf dfuncEstim abundEstim
-#' @importFrom dplyr mutate select
 #' @export
 #'
 #' @examples
@@ -72,26 +67,26 @@ fitDistSampModel <- function(ddf,
 
   # Set units (required by Rdistance as of v2.2)
   # And Rdistance works best if the distance column is named "dist"
-  wHi <- units::set_units(wHi, "m")
-  areaMi2 <- units::set_units(areaMi2, "mi2")
+  wHi <- set_units(wHi, "m")
+  areaMi2 <- set_units(areaMi2, "mi2")
 
   ddf <- ddf |>
-    mutate(dist = units::set_units(adjustedDist, "m")) |>
+    mutate(dist = set_units(adjustedDist, "m")) |>
     select(-adjustedDist)
 
   sdf <- sdf |>
-    mutate(length = units::set_units(lengthKm, "km")) |>
+    mutate(length = set_units(lengthKm, "km")) |>
     select(-lengthKm)
 
 
   # Make nested data.frame (required by Rdistance as of v4.0)
-  df <- Rdistance::RdistDf(transectDf = sdf,
-                           detectionDf = ddf,
-                           by = "siteID",
-                           pointSurvey = FALSE,
-                           observer = "single",
-                           .detectionCol = "detections",
-                           .effortCol = "length")
+  df <- RdistDf(transectDf = sdf,
+                detectionDf = ddf,
+                by = "siteID",
+                pointSurvey = FALSE,
+                observer = "single",
+                .detectionCol = "detections",
+                .effortCol = "length")
 
   # Summary
   # summary(df, formula = dist ~ groupsize(s))
@@ -102,11 +97,11 @@ fitDistSampModel <- function(ddf,
   # Specifying outputUnits = "m" will provide distance measures in m
   # and density estimate in mi^2 (we'll convert those to mi^2 in the app)
   dfunc <- df |>
-    Rdistance::dfuncEstim(dist ~ 1 + groupsize(s),
-                          likelihood = keyFun,
-                          expansions = 0,
-                          w.hi = wHi,
-                          outputUnits = "m")
+    dfuncEstim(dist ~ 1 + groupsize(s),
+               likelihood = keyFun,
+               expansions = 0,
+               w.hi = wHi,
+               outputUnits = "m")
 
   # plot(dfunc)
 
@@ -120,12 +115,12 @@ fitDistSampModel <- function(ddf,
   }
 
   fit <- dfunc |>
-    Rdistance::abundEstim(area = areaMi2,
-                          propUnitSurveyed = sidesSurveyed / 2,
-                          ci = ci,
-                          R = bootIterations,
-                          plot.bs = FALSE,
-                          showProgress = FALSE)
+    abundEstim(area = areaMi2,
+               propUnitSurveyed = sidesSurveyed / 2,
+               ci = ci,
+               R = bootIterations,
+               plot.bs = FALSE,
+               showProgress = FALSE)
 
   summary(fit)
   data.frame(fit$estimates)

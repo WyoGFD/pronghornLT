@@ -29,14 +29,13 @@
 #' in April 2022.
 #'
 #' @return Scalar, the total length (km) of transects to survey.
-#' @importFrom sf st_area st_union
 #' @export
 #'
 #'
 #' @examples
 #' \dontrun{
 #' # Read in a sf polygon (here for Rattlesnake herd unit less unoccupied area)
-#' occupiedPolygon <- sf::st_read("U:/My Drive/PronghornLT/Rattlesnake/GIS",
+#' occupiedPolygon <- st_read("U:/My Drive/PronghornLT/Rattlesnake/GIS",
 #'                                "Rattlesnake_HU")
 #'
 #' calcLineLength(occupiedPolygon = occupiedPolygon,
@@ -52,10 +51,10 @@ calcLineLength <- function(occupiedPolygon,
                            avgGroupSize = 2.3) {
 
   # Union for multiple features
-  occupiedPolygon <- sf::st_union(occupiedPolygon)
+  occupiedPolygon <- st_union(occupiedPolygon)
 
   # Calculate area
-  area <- sf::st_area(occupiedPolygon)
+  area <- st_area(occupiedPolygon)
 
   # Calculate length of transects in m
   l.m <- (targetGroups*area*avgGroupSize)/(N*p*w)

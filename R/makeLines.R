@@ -42,16 +42,11 @@
 #' }
 #'
 #' @author Tom Prebyl, Jason Carlisle, and Garrett Catlin
-#' @importFrom dplyr "%>%" filter
-#' @importFrom sf st_difference st_union st_coordinates st_sfc st_bbox st_crs st_length st_write st_linestring st_transform st_agr
-#' @import spatstat
-#' @import spatstat.geom
-#' @rawNamespace import(data.table, except = shift)
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' #Read in herd unit polygon
+#' # Read in herd unit polygon
 #' hu <- sf::st_read("W:/My Drive/Projects/Pronghorn_ltds/herd_units/Rattlesnake_HU.shp")
 #'
 #' # Make lines
@@ -71,18 +66,18 @@
 
 
 makeLines <- function(sPoly,
-              totalLengthKm,
-              angle = 0,
-              minLengthKm = 2.0,
-              offset = 0,
-              considerHuntArea = TRUE,
-              huntAreaBuffer = 1000,
-              breakLongLines = TRUE,
-              breakLongLineLength = 40,
-              minSpace = NULL,
-              maxSpace = NULL,
-              optimTol = 0.01,
-              optimQuick = FALSE) {
+                      totalLengthKm,
+                      angle = 0,
+                      minLengthKm = 2.0,
+                      offset = 0,
+                      considerHuntArea = TRUE,
+                      huntAreaBuffer = 1000,
+                      breakLongLines = TRUE,
+                      breakLongLineLength = 40,
+                      minSpace = NULL,
+                      maxSpace = NULL,
+                      optimTol = 0.01,
+                      optimQuick = FALSE) {
 
   # Functions below interpret angle = 90 to be North-South and 0 East-West
   # Convert so user inputs are more intuitive 0 = N-S, 90 = E-W
@@ -96,13 +91,13 @@ makeLines <- function(sPoly,
   sHUNTNAMES <- unique(sPoly$HUNTNAME)
 
   # union sPoly with itself
-  sPoly <- sf::st_union(sPoly)
+  sPoly <- st_union(sPoly)
 
   # create spatstat window using owinList
-  polyWin <- spatstat.geom::as.owin(sPoly)
+  polyWin <- as.owin(sPoly)
 
   # Estimate approx line spacing (using area)
-  totSqKM <- as.numeric(sf::st_area(sPoly)*1e-06)
+  totSqKM <- as.numeric(st_area(sPoly)*1e-06)
   targKmPerSqKm <- totalLengthKm/totSqKM
   approxSpace <- exp(-1*log(targKmPerSqKm))*1000  # approximate line spacing (m)
 
@@ -115,7 +110,7 @@ makeLines <- function(sPoly,
     maxSpace <- approxSpace*1.1
   }
 
-  optimSpace <- stats::optimize(
+  optimSpace <- optimize(
     f = evalLines,
     lower = minSpace,
     upper = maxSpace,
@@ -166,65 +161,65 @@ makeLines <- function(sPoly,
   # Convert lines to sf object
   matLines <- as.matrix(keepLines)
   lines <- lapply(1:nrow(matLines), function(x) {
-    sf::st_linestring(matrix(matLines[x,],ncol=2, byrow = TRUE))
+    st_linestring(matrix(matLines[x,],ncol=2, byrow = TRUE))
   })
-  sfLines <- sf::st_sfc(lines, crs = sf::st_crs(sPoly))
+  sfLines <- st_sfc(lines, crs = st_crs(sPoly))
 
   # Add attributes
-  sfLines <- sf::st_sf(sfLines)
-  sfLines <- sf::st_combine(sfLines)
-  sfLines <- sf::st_cast(sfLines, "LINESTRING")
+  sfLines <- st_sf(sfLines)
+  sfLines <- st_combine(sfLines)
+  sfLines <- st_cast(sfLines, "LINESTRING")
 
   # split transects at hunt areas?
   if (considerHuntArea) {
 
     # get relevant hunt areas
     huntAreasIn <- huntAreas %>%
-      dplyr::filter(HUNTNAME %in% sHUNTNAMES)
+      filter(HUNTNAME %in% sHUNTNAMES)
 
     # If needed, project hunt area object to same crs as sPoly
     if (st_crs(huntAreas) != st_crs(sPoly)) {
-      huntAreasIn <- sf::st_transform(huntAreasIn, crs = sf::st_crs(sPoly))
+      huntAreasIn <- st_transform(huntAreasIn, crs = st_crs(sPoly))
     }
 
     # create outline of herd unit & cast
-    outline <- sf::st_cast(sf::st_union(huntAreasIn), "MULTILINESTRING")
+    outline <- st_cast(st_union(huntAreasIn), "MULTILINESTRING")
 
     # buffer this outline (to avoid placing pts on hu border)
-    outlineBuffer <- sf::st_buffer(outline, units::as_units(50, "m"))
+    outlineBuffer <- st_buffer(outline, set_units(50, "m"))
 
     # cast borders to multilinestring
-    haBorders <- sf::st_cast(huntAreasIn$geometry, "MULTILINESTRING")
+    haBorders <- st_cast(huntAreasIn$geometry, "MULTILINESTRING")
 
     # remove outer borders
-    haBorders <- sf::st_difference(haBorders, outlineBuffer)
-    haBorders <- sf::st_cast(haBorders, "MULTILINESTRING")
+    haBorders <- st_difference(haBorders, outlineBuffer)
+    haBorders <- st_cast(haBorders, "MULTILINESTRING")
 
     # get intersections as points
-    intersectPoints <- sf::st_intersection(sfLines, haBorders)
-    intersectPoints <- sf::st_combine(intersectPoints)
+    intersectPoints <- st_intersection(sfLines, haBorders)
+    intersectPoints <- st_combine(intersectPoints)
 
     # if isn't empty
-    if (!sf::st_is_empty(intersectPoints)) {
+    if (!st_is_empty(intersectPoints)) {
       # cast points
-      intersectPoints <- sf::st_cast(intersectPoints, "POINT")
+      intersectPoints <- st_cast(intersectPoints, "POINT")
 
       # add buffer to points
-      intersectPoints <- sf::st_buffer(intersectPoints, units::as_units(huntAreaBuffer, "m"))
+      intersectPoints <- st_buffer(intersectPoints, set_units(huntAreaBuffer, "m"))
 
       # add buffer to points
-      intersectPoints <- sf::st_buffer(intersectPoints, units::as_units(1000, "m"))
+      intersectPoints <- st_buffer(intersectPoints, set_units(1000, "m"))
 
       # get intersections
-      lineCutouts <- sf::st_combine(sf::st_intersection(sfLines, intersectPoints))
+      lineCutouts <- st_combine(st_intersection(sfLines, intersectPoints))
 
       # add buffer (weird sf error handling)
-      lineCutouts <- sf::st_buffer(lineCutouts, 50)
+      lineCutouts <- st_buffer(lineCutouts, 50)
 
       # new lines
-      sfLines <- sf::st_difference(sfLines, lineCutouts)
-      sfLines <- sf::st_combine(sfLines)
-      sfLines <- sf::st_cast(sfLines, "LINESTRING")
+      sfLines <- st_difference(sfLines, lineCutouts)
+      sfLines <- st_combine(sfLines)
+      sfLines <- st_cast(sfLines, "LINESTRING")
     }
   }
 
@@ -241,21 +236,21 @@ makeLines <- function(sPoly,
       sfLinesChange <- sfLines[lengthKm > breakLongLineLength]
 
       # get centroids to change
-      changeCentroids <- sf::st_centroid(sfLinesChange$x)
+      changeCentroids <- st_centroid(sfLinesChange$x)
 
       # add buffer to centers
-      changeCentroids <- sf::st_buffer(changeCentroids, units::as_units(1000, "m"))
+      changeCentroids <- st_buffer(changeCentroids, set_units(1000, "m"))
 
       # get intersections
-      lineCutouts <- sf::st_combine(sf::st_intersection(sfLinesChange$x, changeCentroids))
+      lineCutouts <- st_combine(st_intersection(sfLinesChange$x, changeCentroids))
 
       # add buffer (weird sf error handling)
-      lineCutouts <- sf::st_buffer(lineCutouts, 50)
+      lineCutouts <- st_buffer(lineCutouts, 50)
 
       # get new lines
-      sfLinesChange <- sf::st_difference(sfLinesChange$x, lineCutouts)
-      sfLinesChange <- sf::st_combine(sfLinesChange)
-      sfLinesChange <- sf::st_cast(sfLinesChange, "LINESTRING")
+      sfLinesChange <- st_difference(sfLinesChange$x, lineCutouts)
+      sfLinesChange <- st_combine(sfLinesChange)
+      sfLinesChange <- st_cast(sfLinesChange, "LINESTRING")
 
       # create sf/data.table object, add length
       sfLinesChange <- addLength(sfLinesChange)
@@ -272,14 +267,14 @@ makeLines <- function(sPoly,
   sfLines <- sfLines[lengthKm >= minLengthKm]
 
   # get centroid of all lines (to see which ha they are in)
-  lineCenters <- sf::st_centroid(sfLines$x)
+  lineCenters <- st_centroid(sfLines$x)
 
   # set agr to remove warning message
   huntAreasAGR <- huntAreas
-  sf::st_agr(huntAreasAGR) = "constant"
+  st_agr(huntAreasAGR) = "constant"
 
   # add info to centroids
-  lineCenters <- sf::st_intersection(huntAreasAGR, lineCenters)
+  lineCenters <- st_intersection(huntAreasAGR, lineCenters)
 
   # add info to transects
   sfLines[, HuntName := lineCenters$HUNTNAME]
@@ -293,12 +288,12 @@ makeLines <- function(sPoly,
   sfLines[, TransectPrefix := gsub("-", "", TransectPrefix)]
 
   # sort from w-e, n-s
-  sortCoords <- sf::st_coordinates(sf::st_centroid(sfLines$x))
+  sortCoords <- st_coordinates(st_centroid(sfLines$x))
   sfLines <- sfLines[order(sortCoords[,"X"], -sortCoords[,"Y"]),]
 
   # make ID based on sort & key
   sfLines[, ID := 1:.N, by = .(HerdName, HuntName)]
-  data.table::setkey(sfLines, TransectPrefix, ID)
+  setkey(sfLines, TransectPrefix, ID)
 
   # add line ID and remove prefix and ID
   sfLines[, LineID := paste0(TransectPrefix, ID)]
@@ -306,7 +301,7 @@ makeLines <- function(sPoly,
   sfLines[, c("TransectPrefix", "ID") := NULL]
 
   # finally, transform to sf again
-  sfLines <- sf::st_as_sf(sfLines)
+  sfLines <- st_as_sf(sfLines)
 
   # Make summary info
   outSumm <- list(
@@ -314,7 +309,7 @@ makeLines <- function(sPoly,
     genTotalLengthKm = sum(sfLines$lengthKm),
     spacingKm = optimSpace$minimum/1000
     # approxRatio = optimSpace$minimum/approxSpace
-    )
+  )
 
 
   # Return sf object and summary
@@ -330,7 +325,7 @@ genLines <- function (spacing,
                       minLength,
                       angle = 0) {
   # TODO validate inputs
-  win <- spatstat.geom::as.owin(win)
+  win <- as.owin(win)
   width <- diff(win$xrange)
   height <- diff(win$yrange)
   rmax <- sqrt(width ^ 2 + height ^ 2) / 2 #length of diagonal divided by 2
@@ -340,7 +335,7 @@ genLines <- function (spacing,
   u <- offset - rmax
   if (u >= rmax)
     return(
-      spatstat.geom::psp(
+      psp(
         numeric(0),
         numeric(0),
         numeric(0),
@@ -354,12 +349,12 @@ genLines <- function (spacing,
   theta <- pi * ((angle - 90) / 180)
   co <- cos(theta)
   si <- sin(theta)
-  X <- spatstat.geom::psp(
+  X <- psp(
     x0 = xmid + p * co + q * si,
     y0 = ymid + p * si - q * co,
     x1 = xmid + p * co - q * si,
     y1 = ymid + p * si + q * co,
-    window = spatstat.geom::owin(xmid + c(-1, 1) * rmax, ymid + c(-1, 1) * rmax),
+    window = owin(xmid + c(-1, 1) * rmax, ymid + c(-1, 1) * rmax),
     check = FALSE
   )
   X <- X[win]$ends
@@ -386,9 +381,9 @@ evalLines <- function(spacing, angle, win, targLenM, offset, minLength){
 
 
 # Manual optimization function to run if stats::optim fails.
-  # Identifies local minimums in spacing-error curve and iteratively searches
-    # each minima for acceptable spacing solution. Explores different offsets
-    # if necessary.
+# Identifies local minimums in spacing-error curve and iteratively searches
+# each minima for acceptable spacing solution. Explores different offsets
+# if necessary.
 manualOptim <- function(minSpace, maxSpace,
                         angle, win, targLenM,
                         offset, minLength,
@@ -406,7 +401,7 @@ manualOptim <- function(minSpace, maxSpace,
   for(offInd in 1:length(tryOffs)) {
     if(offInd > 1) {
       warning("Failed to find solution with supplied offset, trying: ",
-        "offset = ", tryOffs[offInd])
+              "offset = ", tryOffs[offInd])
       offset <- tryOffs[offInd]
       fineIter = fineIter+100
     }
@@ -422,9 +417,9 @@ manualOptim <- function(minSpace, maxSpace,
                   offset = offset,
                   minLength = minLength)})
       if(any(roughRes < targLenM*optimTol)){
-             roughOptim <- list(minimum = roughSpace[which.min(roughRes)],
-                               objective = min(roughRes))
-             return(roughOptim) # return if satisfies criteria
+        roughOptim <- list(minimum = roughSpace[which.min(roughRes)],
+                           objective = min(roughRes))
+        return(roughOptim) # return if satisfies criteria
       }
       # get rough local minima
       roughlocMins <- localmin(roughRes)$ind
@@ -439,7 +434,7 @@ manualOptim <- function(minSpace, maxSpace,
     }
     # plot(roughSpace, roughRes)
     # points(roughSpace[roughlocMins], roughRes[roughlocMins],
-      # pch = 16, col = 'red')
+    # pch = 16, col = 'red')
 
     # run fine optimization on each local minima
     fineOut <- do.call(rbind, lapply(roughlocMins, function(roughInd) {
@@ -458,16 +453,16 @@ manualOptim <- function(minSpace, maxSpace,
                   targLenM = targLenM,
                   offset = offset,
                   minLength = minLength)
-        })
+      })
       # plot(fineSpace, fineRes)
       tempOptim <- list(minimum = fineSpace[which.min(fineRes)],
-                         objective = min(fineRes))
+                        objective = min(fineRes))
       return(tempOptim)
-      }))
+    }))
 
     fineOut <- fineOut[which.min(fineOut[,2]),]
     fineOptim <- list(minimum = fineOut$minimum,
-                       objective = fineOut$objective)
+                      objective = fineOut$objective)
     if(fineOptim$objective < targLenM*optimTol) {
       optimMan <- fineOptim
       return(fineOptim) # return if satisfies criteria
@@ -510,11 +505,11 @@ localmin <- function (x, n.points = 2) {
 
 # helper function for adding length to sfLines
 addLength <- function(dt) {
-  dt <- sf::st_as_sf(dt)
-  dt <- data.table::as.data.table(dt)
-  dt[, length := sf::st_length(x)]
-  dt[, lengthKm := units::set_units(length, "km")]
-  dt[, lengthMi := units::set_units(length, "mi")]
+  dt <- st_as_sf(dt)
+  dt <- as.data.table(dt)
+  dt[, length := st_length(x)]
+  dt[, lengthKm := set_units(length, "km")]
+  dt[, lengthMi := set_units(length, "mi")]
   dt[, length := NULL]
   dt[, c("lengthKm", "lengthMi") := lapply(.SD, as.numeric), .SDcols = c("lengthKm", "lengthMi")]
 }
