@@ -1,47 +1,113 @@
-# Save herd unit and hunt area shapefiles into the package as exported data
+# Prepare and save data into the package
 
+library(httr)
 library(sf)
 library(dplyr)
 library(units)
+library(devtools)
 library(usethis)
 
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
+# Antelope herd units and hunt areas ----
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
 
-# Download latest herd unit and hunt area shapefiles from WGFD website
-# https://wgfd.wyo.gov/Wildlife-in-Wyoming/Geospatial-Data/Big-Game-GIS-Data
+# Read latest spatial data for herd unit and hunt area boundaries directly
+# from WGFD central GIS
+# https://wyoming-wgfd.opendata.arcgis.com/
 
-# Remember to update the "current as of" date in herdUnits.R and huntAreas.R
-# each time new shapefiles are downloaded and placed into the package.
+# Function by Eric Newkirk to read programatically
+wgfd_agol_data <- function(layer_name, crs = 4326) {
 
-shp_path <- ("C:/Users/jadcarlisle/My Drive/Pronghorn/GIS")
+  # base url
+  dl_url <- httr::parse_url("https://services6.arcgis.com/")
 
+  # path for correct dataset
+  dl_url$path <- list(
+    "cWzdqIyxbijuhPLw", "arcgis", "rest", "services",
+    layer_name, "FeatureServer", "0", "query"
+  )
 
-# HERD UNITS
-herdUnits <- st_read(file.path(shp_path, "AntelopeHerdUnits.shp"))
-dim(herdUnits)  # 41 5
+  # query options including crs
+  dl_url$query <- list(
+    where = "1=1",
+    outFields = "*",
+    outSR = crs,
+    f = "geojson"
+  )
 
-# There's a tiny sliver of a 2nd feature for North Black Hills
-# Remove it (filter out herds smaller than 10 square meters)
-herdUnits <- herdUnits %>%
-  filter(st_area(herdUnits) > units::as_units(10, "m^2"))
-dim(herdUnits)  # 40 5
+  # create sf object directly from url
+  sf::read_sf(httr::build_url(dl_url))
+
+}
 
 
 # HUNT AREAS
-huntAreas <- st_read(file.path(shp_path, "AntelopeHuntAreas.shp"))
-dim(huntAreas)  # 102 8
-
-
-# Remove some columns to minimize size of package data
-herdUnits <- herdUnits %>%
-  select(HERDUNIT, HERDNAME, geometry)
+huntAreas <- wgfd_agol_data("AntelopeHuntAreas")
 
 huntAreas <- huntAreas %>%
-  select(HUNTAREA, HUNTNAME, HERDUNIT, HERDNAME, geometry)
+  mutate(AREA = units::set_units(sf::st_area(huntAreas), "mi^2")) %>%
+  select(HUNTAREA,
+         HUNTNAME,
+         HERDUNIT,
+         HERDNAME,
+         AREA) %>%
+  arrange(HUNTAREA)
 
+dim(huntAreas)  # 102 6
+
+
+# HERD UNITS
+herdUnits <- wgfd_agol_data("AntelopeHerdUnits")
+
+herdUnits <- herdUnits %>%
+  mutate(AREA = units::set_units(sf::st_area(herdUnits), "mi^2")) %>%
+  select(HERDUNIT,
+         HERDNAME,
+         AREA) %>%
+  arrange(HERDUNIT)
+
+dim(herdUnits)  # 40 4
+
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
+# Pronghorn LT distance bins ----
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
+
+# Nominal distance bins
+cutPoints <- units::set_units(c(0, 20, 45, 80, 145, 200), "m")
+midPoints <- cutPoints[-length(cutPoints)] + diff(cutPoints)/2
+offset <- units::set_units(65, "m")
+
+(distanceBins <- data.frame(distBin = c("Alpha",
+                                        "Bravo",
+                                        "Charlie",
+                                        "Delta",
+                                        "Echo"),
+                            left_ground = cutPoints[1:5] + offset,
+                            right_ground = cutPoints[2:6] + offset,
+                            left_offset = cutPoints[1:5],
+                            right_offset = cutPoints[2:6],
+                            mid_offset = cutPoints[1:5] + diff(cutPoints)/2,
+                            width = diff(cutPoints)))
+
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
+# Update documentation ----
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
+# Reminder to update the help documentation as needed
+# For example, the huntAreas.R and herdUnits.R files have a "current as of" date.
+
+# Then re-run the documentation creator
+devtools::document()
+
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
+# Write out ----
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
 
 # Save into package
 # Creates .rda file for each in /data directory
-usethis::use_data(huntAreas, herdUnits,
+usethis::use_data(huntAreas, herdUnits, distanceBins,
                   internal = FALSE,
                   overwrite = TRUE,
                   compress = "bzip2")
