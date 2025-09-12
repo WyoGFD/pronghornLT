@@ -203,7 +203,7 @@ prepDataForAnalysis <- function(inputFile = NULL,
 
   # Fix odd text formatting from CyberTracker which added "; Cluster size" into
   # the band column
-  x$band <- gsub("; Cluster size", "", x$band)
+  x$band <- gsub("; Cluster size|;Cluster size", "", x$band)
 
   # time format date/time cols
   x$Date <- ymd(x$Date)
